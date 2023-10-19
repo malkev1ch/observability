@@ -1,0 +1,89 @@
+# Valid values are "daemonset", "deployment", and "statefulset".
+mode: daemonset
+
+configMap:
+  # Specifies whether a configMap should be created (true by default)
+  create: true
+
+# When enabled, the chart will set the GOMEMLIMIT env var to 80% of the configured
+# resources.limits.memory and remove the memory ballast extension.
+# If no resources.limits.memory are defined enabling does nothing.
+# In a future release this setting will be enabled by default.
+# See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891
+# for more details.
+useGOMEMLIMIT: true
+
+# Resource limits & requests. Update according to your own use case as these values might be too low for a typical deployment.
+resources:
+  limits:
+    cpu: 250m
+    memory: 512Mi
+
+presets:
+  # enables the k8sattributesprocessor and adds it to the traces, metrics, and logs pipelines
+  kubernetesAttributes:
+    enabled: true
+  # enables the kubeletstatsreceiver and adds it to the metrics pipelines
+  kubeletMetrics:
+    enabled: true
+  # Enables the filelogreceiver and adds it to the logs pipelines
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: false
+    # Enabling this writes checkpoints in /var/lib/otelcol/ host directory.
+    # Note this changes collector's user to root, so that it can write to host directory.
+    storeCheckpoints: false
+    # The maximum bytes size of the recombined field.
+    # Once the size exceeds the limit, all received entries of the source will be combined and flushed.
+    maxRecombineLogSize: 102400
+
+config:
+  extensions:
+    basicauth/otlp:
+      client_auth:
+        username: 719600
+        password: glc_eyJvIjoiOTI0OTc2IiwibiI6Im9ic2VydmFiaWxpdHktdG9rZW4iLCJrIjoiNWhCaHl0Q29HMTA0dmlGNThBNmc4cDEzIiwibSI6eyJyIjoicHJvZC1ldS13ZXN0LTIifX0=
+
+  # A receiver, which can be push or pull based, is how data gets into the Collector.
+  receivers:
+    # Data sources: traces, metrics, logs
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+  # Processors are run on data between being received and being exported.
+  processors:
+    # If set to {}, default values will be used.
+    batch:
+      # Number of spans, metric data points, or log records
+      send_batch_size: 100
+      # Time duration after which a batch will be sent regardless of size
+      timeout: 1s
+    # If set to null, will be overridden with values based on k8s resource limits
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 200
+      spike_limit_mib: 20
+
+  exporters:
+    otlphttp:
+      auth:
+        authenticator: basicauth/otlp
+      endpoint: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
+
+  service:
+    extensions: [basicauth/otlp]
+    pipelines:
+      metrics:
+        receivers: [otlp]
+        processors: [batch, memory_limiter]
+        exporters: [otlphttp]
+      traces:
+        receivers: [otlp]
+        processors: [batch, memory_limiter]
+        exporters: [otlphttp]
+      logs:
+        receivers: [otlp]
+        processors: [batch, memory_limiter]
+        exporters: [otlphttp]

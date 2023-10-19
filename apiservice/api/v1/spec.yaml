@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: Swagger Service - OpenAPI 3.0
+  description: |-
+    This is Service based on the OpenAPI 3.0 specification which provide functionality to make orders.
+    
+    Some useful links:
+    - [The github repository](https://github.com/malkev1ch)
+  contact:
+    email: malkevich.me@gmail.com
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: users
+    description: Everything about user.
+paths:
+  /v1/users:
+    get:
+      tags:
+        - users
+      summary: Create user
+      description: Create user with provided info.
+      operationId: createUser
+      requestBody:
+        description: Model to create user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get user by id
+      description: Returns user info.
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: '231245'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/vouchers:
+    get:
+      tags:
+        - voucher
+      summary: Search voucher
+      description: Returns voucher info.
+      operationId: searchVoucher
+      parameters:
+        - name: userId
+          in: query
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: '231245'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateUser:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - created_at
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        user_name:
+          type: string
+        value:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - value
+        - user_id
+        - user_name
+        - created_at
+    ErrorResponse:
+      required:
+        - message
+      type: object
+      properties:
+        message:
+          type: string

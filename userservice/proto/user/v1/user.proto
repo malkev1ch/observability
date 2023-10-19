@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package user_service.proto.user.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service UserService {
+  rpc Create(CreateRequest) returns (CreateResponse) {}
+  rpc GetByID(GetByIDRequest) returns (GetByIDResponse) {}
+}
+
+// User represents a user.
+message User {
+  int64 id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message GetByIDRequest {
+  int64 id = 1;
+}
+
+message GetByIDResponse {
+  User user = 1;
+}
+
+message CreateRequest {
+  string name = 1;
+}
+
+message CreateResponse {
+  User user = 1;
+}

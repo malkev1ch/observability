@@ -1,0 +1,42 @@
+# Valid values are "daemonset", "deployment", and "statefulset".
+mode: deployment
+
+# We only want one of these collectors - any more and we'd produce duplicate data
+replicaCount: 1
+
+configMap:
+  # Specifies whether a configMap should be created (true by default)
+  create: true
+
+# When enabled, the chart will set the GOMEMLIMIT env var to 80% of the configured
+# resources.limits.memory and remove the memory ballast extension.
+# If no resources.limits.memory are defined enabling does nothing.
+# In a future release this setting will be enabled by default.
+# See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891
+# for more details.
+useGOMEMLIMIT: true
+
+presets:
+  # enables the k8sclusterreceiver and adds it to the metrics pipelines
+  clusterMetrics:
+    enabled: true
+  # enables the k8sobjectsreceiver to collect events only and adds it to the logs pipelines
+  kubernetesEvents:
+    enabled: true
+
+
+## The chart only includes the loggingexporter by default
+## If you want to send your data somewhere you need to
+## configure an exporter, such as the otlpexporter
+# config:
+# exporters:
+#   otlp:
+#     endpoint: "<SOME BACKEND>"
+# service:
+#   pipelines:
+#     traces:
+#       exporters: [ otlp ]
+#     metrics:
+#       exporters: [ otlp ]
+#     logs:
+#       exporters: [ otlp ]
