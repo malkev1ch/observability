@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp-api-service
+  namespace: default
+  labels:
+    app: api-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-service
+  template:
+    metadata:
+      labels:
+        app: api-service
+        namespace: default
+    spec:
+      containers:
+        - name: api-service
+          image: europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:COMMIT_SHA
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ADDRESS
+              value: 0.0.0.0:8080
+            - name: USER_SERVICE_ADDRESS
+              value: svc-user-service:80
+            - name: POD_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_ADDRESS
+              value: $(POD_HOST):4317
+
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: http-hc-config
+spec:
+  healthCheck:
+    checkIntervalSec: 15
+    timeoutSec: 15
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    port: 8080
+    type: HTTP
+    requestPath: /v1/healthz
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-api-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "http-hc-config"}'
+    cloud.google.com/neg: '{"ingress": true}' # Creates a NEG after an Ingress is created
+  namespace: default
+spec:
+  selector:
+    app: api-service
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+
+---
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: ing-api-service
+  spec:
+    defaultBackend:
+      service:
+        name: svc-api-service # Name of the Service targeted by the Ingress
+        port:
+          number: 80 # Should match the port used by the Service

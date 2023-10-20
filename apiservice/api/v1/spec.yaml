@@ -13,13 +13,13 @@ externalDocs:
   description: Find out more about Swagger
   url: http://swagger.io
 servers:
-  - url: http://localhost:8080
+  - url: http://0.0.0.0:8080
 tags:
   - name: users
     description: Everything about user.
 paths:
   /v1/users:
-    get:
+    post:
       tags:
         - users
       summary: Create user

@@ -1,0 +1,56 @@
+name: Deploy Observability Services
+
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: code checkout
+        uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: tactical-works-402510
+
+      # Get the GKE credentials, so we can deploy to the cluster
+      - uses: google-github-actions/get-gke-credentials@v1
+        with:
+          project_id: tactical-works-402510
+          cluster_name: observability-cluster-1
+          location: us-central1-a
+
+      # Configure docker to use the gcloud command-line tool as a credential helper
+      - run: |
+          gcloud auth configure-docker europe-docker.pkg.dev
+          gcloud auth list
+          cat ~/.docker/config.json
+
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+
+      - name: build and push the docker images
+        env:
+          SHORT_SHA: ${{ env.SHORT_SHA }}
+        run: |
+          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA -f apiservice/Dockerfile .
+          docker push europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA
+#          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA -f userservice/Dockerfile .
+#          docker push europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA
+
+      - name: deploy to gke
+        env:
+          SHORT_SHA: ${{ env.SHORT_SHA }}
+        run: |
+          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/apiservice.yaml
+          kubectl apply -f deploy/apiservice.yaml
+#          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/userservice.yaml
+#          kubectl apply -f deploy/userservice.yaml

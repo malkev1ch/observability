@@ -7,7 +7,7 @@ endif
 
 .PHONY: run-api
 run-api:
-	go run api-service/main.go
+	go run apiservice/main.go
 
 .PHONY: build
 build:
@@ -24,12 +24,15 @@ gen:
 # ==============================================================================
 # Deploy commands
 
+.PHONY: build-and-push-image
+build-and-push-image:
+	docker build -t europe-docker.pkg.dev/tactical-works-402510/registry/apiservice:latest -f apiservice/Dockerfile
+	docker push europe-docker.pkg.dev/tactical-works-402510/registry/apiservice
+
 .PHONY: deploy
 deploy:
-	docker build . -t malkev1ch/user-service:1.0.0 -f userservice/Dockerfile
-	kubectl apply -f deploy/user-service.yaml
-	docker build . -t malkev1ch/api-service:1.0.0 -f apiservice/Dockerfile
-	kubectl apply -f deploy/api-service.yaml
+	helm upgrade otel-collector-ds open-telemetry/opentelemetry-collector --values deploy/optl/daemonset.yaml
+	#helm upgrade otel-collector-dp open-telemetry/opentelemetry-collector --values deploy/optl/deployment.yaml
 
 # ==============================================================================
 # Tools commands

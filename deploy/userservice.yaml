@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-service
+  name: dp-user-service
   namespace: default
   labels:
     app: user-service
@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: "malkev1ch/user-service:1.0.0"
-          imagePullPolicy: IfNotPresent
+          image: europe-docker.pkg.dev/tactical-works-402510/demo/userservice:COMMIT_SHA
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
@@ -30,13 +30,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: user-service
+  name: svc-user-service
   namespace: default
 spec:
+  selector:
+    app: user-service
   ports:
     - port: 80
       targetPort: 8080
       protocol: TCP
-  type: NodePort
-  selector:
-    app: user-service
+  type: ClusterIP
+

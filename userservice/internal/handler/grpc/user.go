@@ -55,7 +55,7 @@ func (h *User) GetByID(ctx context.Context, in *v1.GetByIDRequest) (*v1.GetByIDR
 	user, err := h.svc.GetByID(ctx, in.Id)
 	if err != nil {
 		slog.Error(
-			"Failed to get user",
+			"Failed to get user by id",
 			slog.Any("request", in),
 		)
 		return nil, err

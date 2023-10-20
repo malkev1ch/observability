@@ -16,6 +16,12 @@ configMap:
 # for more details.
 useGOMEMLIMIT: true
 
+# Resource limits & requests. Update according to your own use case as these values might be too low for a typical deployment.
+resources:
+  limits:
+    cpu: 250m
+    memory: 512Mi
+
 presets:
   # enables the k8sclusterreceiver and adds it to the metrics pipelines
   clusterMetrics:
@@ -25,18 +31,81 @@ presets:
     enabled: true
 
 
-## The chart only includes the loggingexporter by default
-## If you want to send your data somewhere you need to
-## configure an exporter, such as the otlpexporter
-# config:
-# exporters:
-#   otlp:
-#     endpoint: "<SOME BACKEND>"
-# service:
-#   pipelines:
-#     traces:
-#       exporters: [ otlp ]
-#     metrics:
-#       exporters: [ otlp ]
-#     logs:
-#       exporters: [ otlp ]
+config:
+  extensions:
+    health_check:
+      endpoint: 0.0.0.0:13133
+    basicauth/otlp:
+      client_auth:
+        username: 719600
+        password: glc_eyJvIjoiOTI0OTc2IiwibiI6Im9ic2VydmFiaWxpdHktdG9rZW4iLCJrIjoiNWhCaHl0Q29HMTA0dmlGNThBNmc4cDEzIiwibSI6eyJyIjoicHJvZC1ldS13ZXN0LTIifX0=
+
+  # Processors are run on data between being received and being exported.
+  processors:
+    # If set to {}, default values will be used.
+    batch:
+      # Number of spans, metric data points, or log records
+      send_batch_size: 1000
+      # Time duration after which a batch will be sent regardless of size
+      timeout: 15s
+    # If set to null, will be overridden with values based on k8s resource limits
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 200
+      spike_limit_mib: 20
+
+  exporters:
+    otlphttp:
+      auth:
+        authenticator: basicauth/otlp
+      endpoint: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
+
+  service:
+    extensions: [health_check, basicauth/otlp]
+    pipelines:
+      metrics:
+        processors: [batch, memory_limiter]
+        exporters: [otlphttp]
+      traces:
+        processors: [batch, memory_limiter]
+        exporters: [otlphttp]
+      logs:
+        processors: [batch, memory_limiter]
+        exporters: [otlphttp]
+
+
+# liveness probe configuration
+# Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+##
+livenessProbe:
+  # Number of seconds after the container has started before startup, liveness or readiness probes are initiated.
+  # initialDelaySeconds: 1
+  # How often in seconds to perform the probe.
+  # periodSeconds: 10
+  # Number of seconds after which the probe times out.
+  # timeoutSeconds: 1
+  # Minimum consecutive failures for the probe to be considered failed after having succeeded.
+  # failureThreshold: 1
+  # Duration in seconds the pod needs to terminate gracefully upon probe failure.
+  # terminationGracePeriodSeconds: 10
+  httpGet:
+    port: 13133
+    path: /
+
+# readiness probe configuration
+# Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+##
+readinessProbe:
+  # Number of seconds after the container has started before startup, liveness or readiness probes are initiated.
+  # initialDelaySeconds: 1
+  # How often (in seconds) to perform the probe.
+  # periodSeconds: 10
+  # Number of seconds after which the probe times out.
+  # timeoutSeconds: 1
+  # Minimum consecutive successes for the probe to be considered successful after having failed.
+  # successThreshold: 1
+  # Minimum consecutive failures for the probe to be considered failed after having succeeded.
+  # failureThreshold: 1
+  httpGet:
+    port: 13133
+    path: /
