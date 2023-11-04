@@ -16,17 +16,17 @@ servers:
   - url: http://0.0.0.0:8080
 tags:
   - name: users
-    description: Everything about user.
+    description: Everything about voucher.
 paths:
   /v1/users:
     post:
       tags:
         - users
-      summary: Create user
-      description: Create user with provided info.
+      summary: Create voucher
+      description: Create voucher with provided info.
       operationId: createUser
       requestBody:
-        description: Model to create user
+        description: Model to create voucher
         required: true
         content:
           application/json:
@@ -49,8 +49,8 @@ paths:
     get:
       tags:
         - users
-      summary: Get user by id
-      description: Returns user info.
+      summary: Get voucher by id
+      description: Returns voucher info.
       operationId: getUserById
       parameters:
         - name: id

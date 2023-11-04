@@ -9,13 +9,13 @@ endif
 run-api:
 	go run apiservice/main.go
 
-.PHONY: build
-build:
-	go build main.go
-
 .PHONY: test
 test:
 	go test -cover ./... -count=1
+
+.PHONY: bench
+bench:
+	go test -bench=. -benchmem -count 1 -benchtime=5s ./...
 
 .PHONY: gen
 gen:
@@ -24,15 +24,10 @@ gen:
 # ==============================================================================
 # Deploy commands
 
-.PHONY: build-and-push-image
-build-and-push-image:
-	docker build -t europe-docker.pkg.dev/tactical-works-402510/registry/apiservice:latest -f apiservice/Dockerfile
-	docker push europe-docker.pkg.dev/tactical-works-402510/registry/apiservice
-
 .PHONY: deploy
 deploy:
 	helm upgrade otel-collector-ds open-telemetry/opentelemetry-collector --values deploy/optl/daemonset.yaml
-	#helm upgrade otel-collector-dp open-telemetry/opentelemetry-collector --values deploy/optl/deployment.yaml
+	helm upgrade otel-collector-dp open-telemetry/opentelemetry-collector --values deploy/optl/deployment.yaml
 
 # ==============================================================================
 # Tools commands

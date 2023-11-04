@@ -65,13 +65,13 @@ config:
     pipelines:
       metrics:
         processors: [batch, memory_limiter]
-        exporters: [otlphttp]
+        exporters: []
       traces:
         processors: [batch, memory_limiter]
-        exporters: [otlphttp]
+        exporters: []
       logs:
         processors: [batch, memory_limiter]
-        exporters: [otlphttp]
+        exporters: []
 
 
 # liveness probe configuration

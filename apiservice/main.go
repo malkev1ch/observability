@@ -11,19 +11,23 @@ import (
 	"github.com/malkev1ch/observability/apiservice/internal/repository/client"
 	"github.com/malkev1ch/observability/apiservice/internal/service"
 	userv1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
+	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 	slogecho "github.com/samber/slog-echo"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -52,23 +56,44 @@ func main() {
 		return
 	}
 
+	// ------------------ OPENTELEMETRY CONFIGURATION ------------------ //
+
+	// Identify application as resource
+	r, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceVersion("v0.1"),
+			semconv.ServiceName(appName),
+		),
+	)
+
+	// Establish connection to opentelemetry agent
 	conn, err := grpc.DialContext(ctx, cfg.OtelAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("Failed to init opentelemetry conn", slog.String("error", err.Error()))
 		return
 	}
 
+	//Initialize an exporter
 	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
 		slog.Error("Failed to init opentelemetry exporter", slog.String("error", err.Error()))
 		return
 	}
 
-	otel.SetTracerProvider(sdktrace.NewTracerProvider(
+	// Initialize a new tracer provider with a batch span processor and the given exporter.
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithResource(r),
+		// Samples every trace
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		// Can be configured
 		sdktrace.WithBatcher(exporter),
-	))
+	)
+
+	// Set as a global provider
+	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	// -------------- END OPENTELEMETRY CONFIGURATION ------------------ //
 
 	grpcDialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -81,12 +106,23 @@ func main() {
 		return
 	}
 
-	userClient := userv1.NewUserServiceClient(userConn)
-	userRepository := client.NewUser(userClient)
-	userService := service.NewUser(userRepository)
-	userHandler := handler.NewUser(userService)
+	voucherConn, err := grpc.Dial(cfg.VoucherServiceAddress, grpcDialOpts...)
+	if err != nil {
+		slog.Error("Failed to init conn to voucher service", slog.String("error", err.Error()))
+		return
+	}
 
-	voucherHandler := handler.NewVoucher(nil)
+	voucherClient := voucherv1.NewVoucherServiceClient(voucherConn)
+	userClient := userv1.NewUserServiceClient(userConn)
+
+	voucherRepository := client.NewVoucher(voucherClient)
+	userRepository := client.NewUser(userClient)
+
+	userService := service.NewUser(userRepository)
+	voucherService := service.NewVoucher(voucherRepository, userRepository)
+
+	userHandler := handler.NewUser(userService)
+	voucherHandler := handler.NewVoucher(voucherService)
 
 	e := echo.New()
 	e.GET("v1/healthz", func(c echo.Context) error {
@@ -95,7 +131,13 @@ func main() {
 
 	e.Use(slogecho.NewWithFilters(slog.Default(), slogecho.IgnorePathContains("healthz")))
 	e.Use(middleware.Recover())
-	e.Use(otelecho.Middleware("apiservice"))
+	e.Use(otelecho.Middleware("apiservice", otelecho.WithSkipper(func(c echo.Context) bool {
+		if strings.Contains(c.Request().URL.Path, "healthz") {
+			return true
+		}
+		return false
+	}),
+	))
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{"*"},
@@ -104,7 +146,7 @@ func main() {
 	e.HideBanner = true
 	e.HidePort = true
 
-	genv1.RegisterHandlers(e, handler.New(userHandler, voucherHandler))
+	genv1.RegisterHandlers(e.Group("/app"), handler.New(userHandler, voucherHandler))
 
 	routes := e.Routes()
 

@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"github.com/caarlos0/env/v9"
-	userv1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
-	handler "github.com/malkev1ch/observability/userservice/internal/handler/grpc"
-	"github.com/malkev1ch/observability/userservice/internal/model"
-	"github.com/malkev1ch/observability/userservice/internal/repository"
-	"github.com/malkev1ch/observability/userservice/internal/repository/client"
-	"github.com/malkev1ch/observability/userservice/internal/service"
 	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
+	handler "github.com/malkev1ch/observability/voucherservice/internal/handler/grpc"
+	"github.com/malkev1ch/observability/voucherservice/internal/model"
+	"github.com/malkev1ch/observability/voucherservice/internal/repository"
+	"github.com/malkev1ch/observability/voucherservice/internal/service"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -91,34 +89,18 @@ func main() {
 
 	// -------------- END OPENTELEMETRY CONFIGURATION ------------------ //
 
-	grpcDialOpts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
-	}
-
-	voucherConn, err := grpc.Dial(cfg.VoucherServiceAddress, grpcDialOpts...)
-	if err != nil {
-		slog.Error("Failed to init conn to voucher service", slog.String("error", err.Error()))
-		return
-	}
-
-	voucherClient := voucherv1.NewVoucherServiceClient(voucherConn)
-
-	userRepository := repository.NewUser()
-	voucherRepository := client.NewVoucher(voucherClient)
-
-	userService := service.NewUser(userRepository, voucherRepository)
-
-	userHandler := handler.NewUser(userService)
-
 	server := grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	)
-
 	reflection.Register(server)
-	userv1.RegisterUserServiceServer(server, userHandler)
+
+	voucherRepository := repository.NewVoucher()
+	voucherService := service.NewVoucher(voucherRepository)
+	voucherHandler := handler.NewVoucher(voucherService)
+
+	voucherv1.RegisterVoucherServiceServer(server, voucherHandler)
 
 	list, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
@@ -138,4 +120,5 @@ func main() {
 
 	server.Stop()
 	slog.Info("Successfully stopped app")
+
 }

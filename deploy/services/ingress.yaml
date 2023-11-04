@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /whereami
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: svc-whereami # Name of the Service targeted by the Ingress
+                port:
+                  number: 80 # Should match the port used by the Service
+          - path: /app/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: svc-api-service
+                port:
+                  number: 80
+
+#---
+#apiVersion: cloud.google.com/v1
+#kind: BackendConfig
+#metadata:
+#  name: http-hc-config
+#spec:
+#  healthCheck:
+#    checkIntervalSec: 15
+#    timeoutSec: 15
+#    healthyThreshold: 1
+#    unhealthyThreshold: 2
+#    port: 8080
+#    type: HTTP
+#    requestPath: /v1/healthz

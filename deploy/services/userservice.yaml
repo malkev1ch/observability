@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp-user-service
+  namespace: default
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        namespace: default
+    spec:
+      containers:
+        - name: voucher-service
+          image: europe-docker.pkg.dev/tactical-works-402510/demo/userservice:COMMIT_SHA
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ADDRESS
+              value: '0.0.0.0:8080'
+            - name: VOUCHER_SERVICE_ADDRESS
+              value: svc-voucher-service:80
+            - name: POD_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_ADDRESS
+              value: $(POD_HOST):4317
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-user-service
+  namespace: default
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: NodePort
+

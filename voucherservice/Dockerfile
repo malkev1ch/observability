@@ -6,10 +6,10 @@ WORKDIR /build
 COPY . .
 
 RUN go mod download
-RUN cd userservice && go build -o /bin/userservice
+RUN cd voucherservice && go build -o /bin/voucherservice
 
 # The command serves as a record, specifying the ports that the container is intended to operate on.
 EXPOSE 8080
 
-ENTRYPOINT ["/bin/userservice"]
+ENTRYPOINT ["/bin/voucherservice"]
 CMD []

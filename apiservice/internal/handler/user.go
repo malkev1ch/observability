@@ -27,7 +27,7 @@ func (h *User) GetUserById(ctx echo.Context, id int64) error {
 	user, err := h.svc.GetByID(ctx.Request().Context(), id)
 	if err != nil {
 		slog.Error(
-			"failed to get user by id",
+			"failed to get voucher by id",
 			slog.String("error", err.Error()),
 		)
 		return echo.ErrInternalServerError
@@ -57,7 +57,7 @@ func (h *User) CreateUser(ctx echo.Context) error {
 	)
 	if err != nil {
 		slog.Error(
-			"failed to create user",
+			"failed to create voucher",
 			slog.String("error", err.Error()),
 		)
 		return echo.ErrInternalServerError

@@ -56,10 +56,10 @@ type CreateUserJSONRequestBody = CreateUser
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Create user
+	// Create voucher
 	// (POST /v1/users)
 	CreateUser(ctx echo.Context) error
-	// Get user by id
+	// Get voucher by id
 	// (GET /v1/users/{id})
 	GetUserById(ctx echo.Context, id int64) error
 	// Search voucher

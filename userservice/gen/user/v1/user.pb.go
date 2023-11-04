@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        (unknown)
-// source: user/v1/user.proto
+// source: voucher/v1/voucher.proto
 
 package userv1
 
@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// User represents a user.
+// User represents a voucher.
 type User struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -137,7 +137,7 @@ type GetByIDResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	User *User `protobuf:"bytes,1,opt,name=voucher,proto3" json:"voucher,omitempty"`
 }
 
 func (x *GetByIDResponse) Reset() {
@@ -231,7 +231,7 @@ type CreateResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	User *User `protobuf:"bytes,1,opt,name=voucher,proto3" json:"voucher,omitempty"`
 }
 
 func (x *CreateResponse) Reset() {
@@ -347,21 +347,21 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 
 var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_user_v1_user_proto_goTypes = []interface{}{
-	(*User)(nil),                  // 0: user_service.proto.user.v1.User
-	(*GetByIDRequest)(nil),        // 1: user_service.proto.user.v1.GetByIDRequest
-	(*GetByIDResponse)(nil),       // 2: user_service.proto.user.v1.GetByIDResponse
-	(*CreateRequest)(nil),         // 3: user_service.proto.user.v1.CreateRequest
-	(*CreateResponse)(nil),        // 4: user_service.proto.user.v1.CreateResponse
+	(*User)(nil),                  // 0: user_service.proto.voucher.v1.User
+	(*GetByIDRequest)(nil),        // 1: user_service.proto.voucher.v1.GetByIDRequest
+	(*GetByIDResponse)(nil),       // 2: user_service.proto.voucher.v1.GetByIDResponse
+	(*CreateRequest)(nil),         // 3: user_service.proto.voucher.v1.CreateRequest
+	(*CreateResponse)(nil),        // 4: user_service.proto.voucher.v1.CreateResponse
 	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_user_v1_user_proto_depIdxs = []int32{
-	5, // 0: user_service.proto.user.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	0, // 1: user_service.proto.user.v1.GetByIDResponse.user:type_name -> user_service.proto.user.v1.User
-	0, // 2: user_service.proto.user.v1.CreateResponse.user:type_name -> user_service.proto.user.v1.User
-	3, // 3: user_service.proto.user.v1.UserService.Create:input_type -> user_service.proto.user.v1.CreateRequest
-	1, // 4: user_service.proto.user.v1.UserService.GetByID:input_type -> user_service.proto.user.v1.GetByIDRequest
-	4, // 5: user_service.proto.user.v1.UserService.Create:output_type -> user_service.proto.user.v1.CreateResponse
-	2, // 6: user_service.proto.user.v1.UserService.GetByID:output_type -> user_service.proto.user.v1.GetByIDResponse
+	5, // 0: user_service.proto.voucher.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	0, // 1: user_service.proto.voucher.v1.GetByIDResponse.voucher:type_name -> user_service.proto.voucher.v1.User
+	0, // 2: user_service.proto.voucher.v1.CreateResponse.voucher:type_name -> user_service.proto.voucher.v1.User
+	3, // 3: user_service.proto.voucher.v1.UserService.Create:input_type -> user_service.proto.voucher.v1.CreateRequest
+	1, // 4: user_service.proto.voucher.v1.UserService.GetByID:input_type -> user_service.proto.voucher.v1.GetByIDRequest
+	4, // 5: user_service.proto.voucher.v1.UserService.Create:output_type -> user_service.proto.voucher.v1.CreateResponse
+	2, // 6: user_service.proto.voucher.v1.UserService.GetByID:output_type -> user_service.proto.voucher.v1.GetByIDResponse
 	5, // [5:7] is the sub-list for method output_type
 	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

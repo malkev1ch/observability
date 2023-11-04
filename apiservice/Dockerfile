@@ -6,10 +6,10 @@ WORKDIR /build
 COPY . .
 
 RUN go mod download
-RUN cd apiservice && go build -o /bin/api-service
+RUN cd apiservice && go build -o /bin/apiservice
 
 # The command serves as a record, specifying the ports that the container is intended to operate on.
 EXPOSE 8080
 
-ENTRYPOINT ["/bin/api-service"]
+ENTRYPOINT ["/bin/apiservice"]
 CMD []

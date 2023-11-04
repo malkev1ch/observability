@@ -25,8 +25,8 @@ jobs:
       - uses: google-github-actions/get-gke-credentials@v1
         with:
           project_id: tactical-works-402510
-          cluster_name: observability-cluster-1
-          location: us-central1-a
+          cluster_name: demo
+          location: europe-central2-a
 
       # Configure docker to use the gcloud command-line tool as a credential helper
       - run: |
@@ -43,14 +43,18 @@ jobs:
         run: |
           docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA -f apiservice/Dockerfile .
           docker push europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA
-#          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA -f userservice/Dockerfile .
-#          docker push europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA
+          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA -f userservice/Dockerfile .
+          docker push europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA
+          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/voucherservice:$SHORT_SHA -f voucherservice/Dockerfile .
+          docker push europe-docker.pkg.dev/tactical-works-402510/demo/voucherservice:$SHORT_SHA
 
       - name: deploy to gke
         env:
           SHORT_SHA: ${{ env.SHORT_SHA }}
         run: |
-          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/apiservice.yaml
-          kubectl apply -f deploy/apiservice.yaml
-#          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/userservice.yaml
-#          kubectl apply -f deploy/userservice.yaml
+          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/apiservice.yaml
+          kubectl apply -f deploy/services/apiservice.yaml
+          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/userservice.yaml
+          kubectl apply -f deploy/services/userservice.yaml
+          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/voucherservice.yaml
+          kubectl apply -f deploy/services/voucherservice.yaml

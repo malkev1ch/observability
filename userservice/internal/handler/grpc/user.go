@@ -42,7 +42,7 @@ func (h *User) Create(ctx context.Context, in *v1.CreateRequest) (*v1.CreateResp
 	})
 	if err != nil {
 		slog.Error(
-			"Failed to create user",
+			"Failed to create voucher",
 			slog.Any("request", in),
 		)
 		return nil, err
@@ -55,7 +55,7 @@ func (h *User) GetByID(ctx context.Context, in *v1.GetByIDRequest) (*v1.GetByIDR
 	user, err := h.svc.GetByID(ctx, in.Id)
 	if err != nil {
 		slog.Error(
-			"Failed to get user by id",
+			"Failed to get voucher by id",
 			slog.Any("request", in),
 		)
 		return nil, err

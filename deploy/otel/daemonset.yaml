@@ -57,7 +57,7 @@ presets:
     enabled: true
     includeCollectorLogs: false
     # Enabling this writes checkpoints in /var/lib/otelcol/ host directory.
-    # Note this changes collector's user to root, so that it can write to host directory.
+    # Note this changes collector's voucher to root, so that it can write to host directory.
     storeCheckpoints: false
     # The maximum bytes size of the recombined field.
     # Once the size exceeds the limit, all received entries of the source will be combined and flushed.
@@ -99,22 +99,26 @@ config:
       auth:
         authenticator: basicauth/otlp
       endpoint: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
+    otlp/jaeger:
+      endpoint: simplest-collector:4317
+      tls:
+        insecure: true
 
   service:
     extensions: [health_check, basicauth/otlp]
     pipelines:
-      metrics:
-        receivers: [otlp]
-        processors: [batch, memory_limiter]
-        exporters: [otlphttp]
+#      metrics:
+#        receivers: [otlp]
+#        processors: [batch, memory_limiter]
+#        exporters: []
       traces:
         receivers: [otlp]
         processors: [batch, memory_limiter]
-        exporters: [otlphttp]
-      logs:
-        receivers: [otlp]
-        processors: [batch, memory_limiter]
-        exporters: [otlphttp]
+        exporters: [otlp/jaeger]
+#      logs:
+#        receivers: []
+#        processors: [batch, memory_limiter]
+#        exporters: []
 
 # Configuration for ports
 # nodePort is also allowed
