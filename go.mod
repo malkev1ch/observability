@@ -5,8 +5,8 @@ go 1.21
 require (
 	github.com/caarlos0/env/v9 v9.0.0
 	github.com/getkin/kin-openapi v0.120.0
-	github.com/labstack/echo/v4 v4.11.2
-	github.com/oapi-codegen/runtime v1.0.0
+	github.com/labstack/echo/v4 v4.11.3
+	github.com/oapi-codegen/runtime v1.1.0
 	github.com/samber/slog-echo v1.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/vearutop/statigz v1.4.0
@@ -31,7 +31,7 @@ require (
 	github.com/go-openapi/swag v0.22.4 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.3.1 // indirect
+	github.com/google/uuid v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
