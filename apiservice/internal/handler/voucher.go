@@ -2,14 +2,16 @@ package handler
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
+
 	genv1 "github.com/malkev1ch/observability/apiservice/gen/v1"
 	"github.com/malkev1ch/observability/apiservice/internal/model"
-	"net/http"
 )
 
 type VoucherService interface {
-	Search(ctx context.Context, userId int64) (*model.Voucher, error)
+	Search(ctx context.Context, userID int64) (*model.Voucher, error)
 }
 
 type Voucher struct {
@@ -29,7 +31,7 @@ func (h *Voucher) SearchVoucher(ctx echo.Context, params genv1.SearchVoucherPara
 	return ctx.JSON(http.StatusOK, genv1.Voucher{
 		CreatedAt: voucher.CreatedAt,
 		Id:        voucher.ID,
-		UserId:    voucher.UserId,
+		UserId:    voucher.UserID,
 		UserName:  voucher.UserName,
 		Value:     voucher.Value,
 	})

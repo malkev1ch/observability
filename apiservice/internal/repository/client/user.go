@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+
 	"github.com/malkev1ch/observability/apiservice/internal/model"
 	v1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
 )

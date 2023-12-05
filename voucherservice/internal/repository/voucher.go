@@ -3,19 +3,20 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/malkev1ch/observability/voucherservice/internal/model"
 	"sync/atomic"
 	"time"
+
+	"github.com/malkev1ch/observability/voucherservice/internal/model"
 )
 
 type Voucher struct {
-	lastId atomic.Int64
+	lastID atomic.Int64
 	m      map[int64]*model.Voucher
 }
 
 func NewVoucher() *Voucher {
 	return &Voucher{
-		lastId: atomic.Int64{},
+		lastID: atomic.Int64{},
 		m:      make(map[int64]*model.Voucher),
 	}
 }
@@ -30,8 +31,8 @@ func (r *Voucher) GetByUserID(_ context.Context, id int64) (*model.Voucher, erro
 }
 
 func (r *Voucher) Create(_ context.Context, voucher *model.Voucher) (*model.Voucher, error) {
-	id := r.lastId.Load()
-	defer r.lastId.Add(1)
+	id := r.lastID.Load()
+	defer r.lastID.Add(1)
 
 	voucher.ID = id
 	voucher.CreatedAt = time.Now().UTC()

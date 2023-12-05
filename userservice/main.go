@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/caarlos0/env/v9"
-	userv1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
-	handler "github.com/malkev1ch/observability/userservice/internal/handler/grpc"
-	"github.com/malkev1ch/observability/userservice/internal/model"
-	"github.com/malkev1ch/observability/userservice/internal/repository"
-	"github.com/malkev1ch/observability/userservice/internal/repository/client"
-	"github.com/malkev1ch/observability/userservice/internal/service"
-	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -21,11 +20,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+
+	userv1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
+	handler "github.com/malkev1ch/observability/userservice/internal/handler/grpc"
+	"github.com/malkev1ch/observability/userservice/internal/model"
+	"github.com/malkev1ch/observability/userservice/internal/repository"
+	"github.com/malkev1ch/observability/userservice/internal/repository/client"
+	"github.com/malkev1ch/observability/userservice/internal/service"
+	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 )
 
 const appName = "voucher-service"
@@ -61,6 +63,10 @@ func main() {
 			semconv.ServiceName(appName),
 		),
 	)
+	if err != nil {
+		slog.Error("Failed to create opentelemetry resource", slog.String("error", err.Error()))
+		return
+	}
 
 	// Establish connection to opentelemetry agent
 	conn, err := grpc.DialContext(ctx, cfg.OtelAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -69,7 +75,7 @@ func main() {
 		return
 	}
 
-	//Initialize an exporter
+	// Initialize an exporter
 	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
 		slog.Error("Failed to init opentelemetry exporter", slog.String("error", err.Error()))

@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/caarlos0/env/v9"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	genv1 "github.com/malkev1ch/observability/apiservice/gen/v1"
-	"github.com/malkev1ch/observability/apiservice/internal/handler"
-	"github.com/malkev1ch/observability/apiservice/internal/model"
-	"github.com/malkev1ch/observability/apiservice/internal/repository/client"
-	"github.com/malkev1ch/observability/apiservice/internal/service"
-	userv1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
-	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 	slogecho "github.com/samber/slog-echo"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -23,17 +24,20 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
+
+	genv1 "github.com/malkev1ch/observability/apiservice/gen/v1"
+	"github.com/malkev1ch/observability/apiservice/internal/handler"
+	"github.com/malkev1ch/observability/apiservice/internal/model"
+	"github.com/malkev1ch/observability/apiservice/internal/repository/client"
+	"github.com/malkev1ch/observability/apiservice/internal/service"
+	swaggergui "github.com/malkev1ch/observability/pkg/swaggergui"
+	userv1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
+	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 )
 
 const appName = "api-service"
 
+//nolint:funlen
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -65,6 +69,10 @@ func main() {
 			semconv.ServiceName(appName),
 		),
 	)
+	if err != nil {
+		slog.Error("Failed to create opentelemetry resource", slog.String("error", err.Error()))
+		return
+	}
 
 	// Establish connection to opentelemetry agent
 	conn, err := grpc.DialContext(ctx, cfg.OtelAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -73,7 +81,7 @@ func main() {
 		return
 	}
 
-	//Initialize an exporter
+	// Initialize an exporter
 	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
 		slog.Error("Failed to init opentelemetry exporter", slog.String("error", err.Error()))
@@ -125,17 +133,10 @@ func main() {
 	voucherHandler := handler.NewVoucher(voucherService)
 
 	e := echo.New()
-	e.GET("v1/healthz", func(c echo.Context) error {
-		return c.NoContent(http.StatusOK)
-	})
-
 	e.Use(slogecho.NewWithFilters(slog.Default(), slogecho.IgnorePathContains("healthz")))
 	e.Use(middleware.Recover())
 	e.Use(otelecho.Middleware("apiservice", otelecho.WithSkipper(func(c echo.Context) bool {
-		if strings.Contains(c.Request().URL.Path, "healthz") {
-			return true
-		}
-		return false
+		return strings.Contains(c.Request().URL.Path, "healthz")
 	}),
 	))
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -146,11 +147,31 @@ func main() {
 	e.HideBanner = true
 	e.HidePort = true
 
+	swaggerGuiHandler := swaggergui.NewHandlerWithConfig(swaggergui.Config{
+		Title:              "Observability",
+		SwaggerJSON:        "/api/v1/openapi.json",
+		BasePath:           "/v1/docs/",
+		ShowTopBar:         false,
+		HideCurl:           false,
+		JSONEditor:         false,
+		PreAuthorizeAPIKey: nil,
+		SettingsUI:         nil,
+	})
+
+	echoHandler := echo.HandlerFunc(func(c echo.Context) error {
+		swaggerGuiHandler.ServeHTTP(c.Response(), c.Request())
+		return nil
+	})
+
+	e.GET("v1/docs", echoHandler)
+
+	e.GET("v1/healthz", func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
+
 	genv1.RegisterHandlers(e.Group("/app"), handler.New(userHandler, voucherHandler))
 
-	routes := e.Routes()
-
-	for _, route := range routes {
+	for _, route := range e.Routes() {
 		slog.Info(
 			"Registered route",
 			slog.String("path", route.Path),

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/malkev1ch/observability/apiservice/internal/model"
 )
 

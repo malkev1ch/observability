@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/caarlos0/env/v9"
-	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
-	handler "github.com/malkev1ch/observability/voucherservice/internal/handler/grpc"
-	"github.com/malkev1ch/observability/voucherservice/internal/model"
-	"github.com/malkev1ch/observability/voucherservice/internal/repository"
-	"github.com/malkev1ch/observability/voucherservice/internal/service"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -19,11 +20,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+
+	voucherv1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
+	handler "github.com/malkev1ch/observability/voucherservice/internal/handler/grpc"
+	"github.com/malkev1ch/observability/voucherservice/internal/model"
+	"github.com/malkev1ch/observability/voucherservice/internal/repository"
+	"github.com/malkev1ch/observability/voucherservice/internal/service"
 )
 
 const appName = "voucher-service"
@@ -59,6 +61,10 @@ func main() {
 			semconv.ServiceName(appName),
 		),
 	)
+	if err != nil {
+		slog.Error("Failed to create opentelemetry resource", slog.String("error", err.Error()))
+		return
+	}
 
 	// Establish connection to opentelemetry agent
 	conn, err := grpc.DialContext(ctx, cfg.OtelAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -67,7 +73,7 @@ func main() {
 		return
 	}
 
-	//Initialize an exporter
+	// Initialize an exporter
 	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
 		slog.Error("Failed to init opentelemetry exporter", slog.String("error", err.Error()))
@@ -120,5 +126,4 @@ func main() {
 
 	server.Stop()
 	slog.Info("Successfully stopped app")
-
 }

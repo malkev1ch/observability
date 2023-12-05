@@ -2,11 +2,13 @@ package handler
 
 import (
 	"context"
-	v1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
-	"github.com/malkev1ch/observability/userservice/internal/model"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	v1 "github.com/malkev1ch/observability/userservice/gen/user/v1"
+	"github.com/malkev1ch/observability/userservice/internal/model"
 )
 
 type UserService interface {
@@ -23,8 +25,6 @@ type User struct {
 func NewUser(svc UserService) *User {
 	return &User{svc: svc}
 }
-
-// TODO: consider to inline in every place while building PGO
 
 func ToUser(user *model.User) *v1.User {
 	return &v1.User{

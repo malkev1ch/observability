@@ -5,56 +5,106 @@ on:
     branches:
       - 'master'
 
+env:
+  GO_VERSION: ^1.20
+  GOLANGCI_LINT_VERSION: v1.54.0
+
 jobs:
-  deploy:
+  lint:
     runs-on: ubuntu-latest
     steps:
-
-      - name: code checkout
-        uses: actions/checkout@v4
-
-      - uses: google-github-actions/auth@v1
+      - uses: actions/setup-go@v4
         with:
-          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-
-      - uses: google-github-actions/setup-gcloud@v1
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/checkout@v3
+      - uses: golangci/golangci-lint-action@v3
         with:
-          project_id: tactical-works-402510
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          args: --timeout=5m
 
-      # Get the GKE credentials, so we can deploy to the cluster
-      - uses: google-github-actions/get-gke-credentials@v1
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v4
         with:
-          project_id: tactical-works-402510
-          cluster_name: demo
-          location: europe-central2-a
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}
 
-      # Configure docker to use the gcloud command-line tool as a credential helper
-      - run: |
-          gcloud auth configure-docker europe-docker.pkg.dev
-          gcloud auth list
-          cat ~/.docker/config.json
+      - name: Tests with real databases
+        run: make test-ci
 
-      - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
-
-      - name: build and push the docker images
-        env:
-          SHORT_SHA: ${{ env.SHORT_SHA }}
+      - name: Code coverage data
         run: |
-          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA -f apiservice/Dockerfile .
-          docker push europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA
-          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA -f userservice/Dockerfile .
-          docker push europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA
-          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/voucherservice:$SHORT_SHA -f voucherservice/Dockerfile .
-          docker push europe-docker.pkg.dev/tactical-works-402510/demo/voucherservice:$SHORT_SHA
+          set -x
+          COVERAGE_TOTAL=`go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
+          echo "COVERAGE_TOTAL=$COVERAGE_TOTAL" >> $GITHUB_ENV
+      - uses: jandelgado/gcov2lcov-action@v1.0.9
+        with:
+          outfile: ./coverage.lcov
 
-      - name: deploy to gke
-        env:
-          SHORT_SHA: ${{ env.SHORT_SHA }}
-        run: |
-          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/apiservice.yaml
-          kubectl apply -f deploy/services/apiservice.yaml
-          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/userservice.yaml
-          kubectl apply -f deploy/services/userservice.yaml
-          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/voucherservice.yaml
-          kubectl apply -f deploy/services/voucherservice.yaml
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          path-to-lcov: ./coverage.lcov
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+#  deploy:
+#    runs-on: ubuntu-latest
+#    steps:
+#
+#      - name: code checkout
+#        uses: actions/checkout@v4
+#
+#      - uses: google-github-actions/auth@v1
+#        with:
+#          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+#
+#      - uses: google-github-actions/setup-gcloud@v1
+#        with:
+#          project_id: tactical-works-402510
+#
+#      # Get the GKE credentials, so we can deploy to the cluster
+#      - uses: google-github-actions/get-gke-credentials@v1
+#        with:
+#          project_id: tactical-works-402510
+#          cluster_name: demo
+#          location: europe-central2-a
+#
+#      # Configure docker to use the gcloud command-line tool as a credential helper
+#      - run: |
+#          gcloud auth configure-docker europe-docker.pkg.dev
+#          gcloud auth list
+#          cat ~/.docker/config.json
+#
+#      - name: Add SHORT_SHA env property with commit short sha
+#        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+#
+#      - name: build and push the docker images
+#        env:
+#          SHORT_SHA: ${{ env.SHORT_SHA }}
+#        run: |
+#          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA -f apiservice/Dockerfile .
+#          docker push europe-docker.pkg.dev/tactical-works-402510/demo/apiservice:$SHORT_SHA
+#          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA -f userservice/Dockerfile .
+#          docker push europe-docker.pkg.dev/tactical-works-402510/demo/userservice:$SHORT_SHA
+#          docker build -t europe-docker.pkg.dev/tactical-works-402510/demo/voucherservice:$SHORT_SHA -f voucherservice/Dockerfile .
+#          docker push europe-docker.pkg.dev/tactical-works-402510/demo/voucherservice:$SHORT_SHA
+#
+#      - name: deploy to gke
+#        env:
+#          SHORT_SHA: ${{ env.SHORT_SHA }}
+#        run: |
+#          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/apiservice.yaml
+#          kubectl apply -f deploy/services/apiservice.yaml
+#          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/userservice.yaml
+#          kubectl apply -f deploy/services/userservice.yaml
+#          sed -i "s/COMMIT_SHA/$SHORT_SHA/g" deploy/services/voucherservice.yaml
+#          kubectl apply -f deploy/services/voucherservice.yaml

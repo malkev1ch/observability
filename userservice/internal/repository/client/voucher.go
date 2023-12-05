@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+
 	v1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 )
 

@@ -79,6 +79,14 @@ config:
       protocols:
         grpc:
           endpoint: ${env:MY_POD_IP}:4317
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 10s
+            static_configs:
+              - targets:
+                  - ${env:MY_POD_IP}:8888
 
   # Processors are run on data between being received and being exported.
   processors:
@@ -99,22 +107,38 @@ config:
       auth:
         authenticator: basicauth/otlp
       endpoint: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
+
     otlp/jaeger:
-      endpoint: simplest-collector:4317
+      endpoint: jaeger.jaeger.svc.cluster.local:4317
       tls:
         insecure: true
+
+    exporters:
+      prometheus:
+        endpoint: ":9090"
+        tls:
+          insecure: true
+        send_timestamps: true
+        metric_expiration: 180m
+        enable_open_metrics: true
+        add_metric_suffixes: false
+        resource_to_telemetry_conversion:
+          enabled: true
+
 
   service:
     extensions: [health_check, basicauth/otlp]
     pipelines:
-#      metrics:
-#        receivers: [otlp]
-#        processors: [batch, memory_limiter]
-#        exporters: []
       traces:
         receivers: [otlp]
         processors: [batch, memory_limiter]
         exporters: [otlp/jaeger]
+
+#      metrics:
+#        receivers: [otlp]
+#        processors: [batch, memory_limiter]
+#        exporters: []
+
 #      logs:
 #        receivers: []
 #        processors: [batch, memory_limiter]
@@ -131,6 +155,13 @@ ports:
     protocol: TCP
     nodePort: 4317
     appProtocol: grpc
+  metrics:
+    # The metrics port is disabled by default. However you need to enable the port
+    # in order to use the ServiceMonitor (serviceMonitor.enabled) or PodMonitor (podMonitor.enabled).
+    enabled: true
+    containerPort: 8888
+    servicePort: 8888
+    protocol: TCP
 
 
 # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/

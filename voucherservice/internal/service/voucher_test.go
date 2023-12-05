@@ -2,11 +2,12 @@ package service_test
 
 import (
 	"github.com/malkev1ch/observability/voucherservice/internal/service"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func BenchmarkGenerate(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_ = service.Generate("B", 6)
-	}
+func TestGenerate(t *testing.T) {
+	voucher := service.Generate("test", 3)
+	require.Len(t, voucher, 7)
+	require.Contains(t, voucher, "test")
 }
