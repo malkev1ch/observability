@@ -7,7 +7,13 @@ endif
 
 .PHONY: run-api
 run-api:
-	go run apiservice/main.go
+	go run services/apiservice/main.go
+
+COVERAGE_FILE="coverage.out"
+
+.PHONY: test-ci
+test-ci:
+	go test ./... -covermode=set -coverprofile=$(COVERAGE_FILE)
 
 .PHONY: test
 test:
@@ -24,11 +30,6 @@ gen:
 # ==============================================================================
 # Deploy commands
 
-.PHONY: deploy
-deploy:
-	helm upgrade otel-collector-ds open-telemetry/opentelemetry-collector --values deploy/optl/daemonset.yaml
-	helm upgrade otel-collector-dp open-telemetry/opentelemetry-collector --values deploy/optl/deployment.yaml
-
 # ==============================================================================
 # Tools commands
 
@@ -38,11 +39,32 @@ linter:
 linter-fix:
 	golangci-lint run ./... --fix
 
+openapi:
+	oapi-codegen -generate types,server,spec -o services/apiservice/gen/v1/openapi.gen.go -package gen services/apiservice/api/v1/spec.yaml
+
 buf:
-	buf generate userservice/proto
+	buf generate services/userservice/proto
+	buf generate services/voucherservice/proto
 
 breaking:
-	buf breaking userservice/proto --against "../../.git#subdir=start/getting-started-with-buf-cli/proto"
+	buf breaking services/userservice/proto --against "../../.git#subdir=start/getting-started-with-buf-cli/proto"
+	buf breaking services/voucherservice/proto --against "../../.git#subdir=start/getting-started-with-buf-cli/proto"
+
+
+SWAGGER_UI_VERSION := v5.10.3
+## Update assets for Swagger UI
+update-swaggergui:
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/swagger-ui-bundle.js -o ./pkg/swaggergui/static/swagger-ui-bundle.js --create-dirs
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/swagger-ui-standalone-preset.js -o ./pkg/swaggergui/static/swagger-ui-standalone-preset.js
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/swagger-ui.js -o ./pkg/swaggergui/static/swagger-ui.js
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/swagger-ui.css -o ./pkg/swaggergui/static/swagger-ui.css
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/oauth2-redirect.html -o ./pkg/swaggergui/static/oauth2-redirect.html
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/favicon-32x32.png -o ./pkg/swaggergui/static/favicon-32x32.png
+	curl https://raw.githubusercontent.com/swagger-api/swagger-ui/$(SWAGGER_UI_VERSION)/dist/favicon-16x16.png -o ./pkg/swaggergui/static/favicon-16x16.png
+	rm -rf ./pkg/swaggergui/static/*.gz
+	zopfli --i50 ./pkg/swaggergui/static/*.js && rm -f ./pkg/swaggergui/static/*.js
+	zopfli --i50 ./pkg/swaggergui/static/*.css && rm -f ./pkg/swaggergui/static/*.css
+	zopfli --i50 ./pkg/swaggergui/static/*.html && rm -f ./pkg/swaggergui/static/*.html
 
 # ==============================================================================
 # Modules support

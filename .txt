@@ -1,8 +1,0 @@
-TOKEN:
-glc_eyJvIjoiOTI0OTc2IiwibiI6Im9ic2VydmFiaWxpdHktdG9rZW4iLCJrIjoiNWhCaHl0Q29HMTA0dmlGNThBNmc4cDEzIiwibSI6eyJyIjoicHJvZC1ldS13ZXN0LTIifX0=
-
-INSTANCE ID:
-719600
-
-OTLP Endpoint URL:
-https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
