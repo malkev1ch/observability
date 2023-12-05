@@ -11,7 +11,7 @@ type User struct {
 type Voucher struct {
 	ID        int64
 	Value     string
-	UserId    int64
+	UserID    int64
 	UserName  string
 	CreatedAt time.Time
 }

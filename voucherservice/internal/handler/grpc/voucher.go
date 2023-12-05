@@ -2,11 +2,13 @@ package handler
 
 import (
 	"context"
-	v1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
-	"github.com/malkev1ch/observability/voucherservice/internal/model"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	v1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
+	"github.com/malkev1ch/observability/voucherservice/internal/model"
 )
 
 type VoucherService interface {

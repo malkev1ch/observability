@@ -21,9 +21,10 @@ $ helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
 ```
 You can then run helm search repo jaegertracing to see the charts.
 
-**Step: 3** To install the jaeger chart with the release name `jaeger` in `default` namespace:
+**Step: 3** To install the jaeger chart with the release name `jaeger` in `jaeger` namespace:
 ```console
-$ helm install jaeger jaegertracing/jaeger-operator -n default
+$ kubectl create namespace jaeger
+$ helm install jaeger jaegertracing/jaeger-operator -n jaeger
 ```
 
 **Step: 4** To install the default jaeger AllInOne strategy:
@@ -31,9 +32,10 @@ $ helm install jaeger jaegertracing/jaeger-operator -n default
 $ kubectl apply -f deploy/jaeger/simplest.yaml
 ```
 
-**Step: 4** To install the opentelemetry chart with the release name `otel-collector` in `default` namespace:
+**Step: 5** To install the opentelemetry chart with the release name `otel-collector` in `otel-collector` namespace:
 ```console
-$ helm install otel-collector-ds open-telemetry/opentelemetry-collector --values deploy/otel/daemonset.yaml -n default
+$ kubectl create namespace otel-collector
+$ helm install otel-collector-ds open-telemetry/opentelemetry-collector --values deploy/otel/daemonset.yaml -n otel-collector
 ```
 
 ## Installing Ingress

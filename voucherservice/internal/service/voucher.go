@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
-	"github.com/malkev1ch/observability/voucherservice/internal/model"
 	"math/rand"
 	"strconv"
 	"strings"
+
+	"github.com/malkev1ch/observability/voucherservice/internal/model"
 )
 
 type VoucherRepository interface {
@@ -26,7 +27,8 @@ func (s *Voucher) GetByUserID(ctx context.Context, id int64) (*model.Voucher, er
 }
 
 func (s *Voucher) Create(ctx context.Context, voucher *model.Voucher) (*model.Voucher, error) {
-	voucher.Value = Generate(strconv.Itoa(int(voucher.UserID)), 6)
+	const length = 6
+	voucher.Value = Generate(strconv.Itoa(int(voucher.UserID)), length)
 	return s.rps.Create(ctx, voucher)
 }
 

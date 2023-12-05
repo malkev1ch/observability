@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/malkev1ch/observability/userservice/internal/model"
 )
 

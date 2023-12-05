@@ -2,12 +2,14 @@ package handler
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
-	genv1 "github.com/malkev1ch/observability/apiservice/gen/v1"
-	"github.com/malkev1ch/observability/apiservice/internal/model"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/labstack/echo/v4"
+
+	genv1 "github.com/malkev1ch/observability/apiservice/gen/v1"
+	"github.com/malkev1ch/observability/apiservice/internal/model"
 )
 
 type UserService interface {
@@ -23,6 +25,7 @@ func NewUser(svc UserService) *User {
 	return &User{svc: svc}
 }
 
+//nolint:all // generated name
 func (h *User) GetUserById(ctx echo.Context, id int64) error {
 	user, err := h.svc.GetByID(ctx.Request().Context(), id)
 	if err != nil {

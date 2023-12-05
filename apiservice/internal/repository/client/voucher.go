@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+
 	"github.com/malkev1ch/observability/apiservice/internal/model"
 	v1 "github.com/malkev1ch/observability/voucherservice/gen/voucher/v1"
 )
@@ -19,7 +20,7 @@ func FromVoucher(in *v1.Voucher) *model.Voucher {
 	return &model.Voucher{
 		ID:        in.Id,
 		Value:     in.Value,
-		UserId:    in.UserId,
+		UserID:    in.UserId,
 		UserName:  "",
 		CreatedAt: in.CreatedAt.AsTime(),
 	}

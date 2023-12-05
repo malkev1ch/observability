@@ -3,19 +3,20 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/malkev1ch/observability/userservice/internal/model"
 	"sync/atomic"
 	"time"
+
+	"github.com/malkev1ch/observability/userservice/internal/model"
 )
 
 type User struct {
-	lastId atomic.Int64
+	lastID atomic.Int64
 	m      map[int64]*model.User
 }
 
 func NewUser() *User {
 	return &User{
-		lastId: atomic.Int64{},
+		lastID: atomic.Int64{},
 		m:      make(map[int64]*model.User),
 	}
 }
@@ -30,8 +31,8 @@ func (r *User) GetByID(_ context.Context, id int64) (*model.User, error) {
 }
 
 func (r *User) Create(_ context.Context, user *model.User) (*model.User, error) {
-	id := r.lastId.Load()
-	defer r.lastId.Add(1)
+	id := r.lastID.Load()
+	defer r.lastID.Add(1)
 
 	user.ID = id
 	user.CreatedAt = time.Now().UTC()
